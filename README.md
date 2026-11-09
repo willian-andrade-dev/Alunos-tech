@@ -18,6 +18,31 @@ O histórico de cada chamado registra a abertura, o início do atendimento, as a
 dotnet run --project checks/Chamados.Checks.csproj
 ```
 
+## API local para testar o fluxo
+
+A API de demonstração usa armazenamento em memória e perfis de teste. As rotas de chamados só funcionam no ambiente Development e aceitam chamadas locais. Reiniciar a API limpa os dados.
+
+```sh
+dotnet run --project src/AlunosTech.Api --no-launch-profile -- --environment Development --urls http://127.0.0.1:5080
+```
+
+Envie o cabeçalho `X-Usuario-Teste` com `funcionario`, `outro-funcionario`, `tecnico` ou `outro-tecnico`. Por exemplo:
+
+```sh
+curl http://127.0.0.1:5080/api/chamados -H 'X-Usuario-Teste: funcionario' \
+  -H 'Content-Type: application/json' \
+  -d '{"titulo":"Sem acesso","categoria":"Rede","descricao":"O Wi-Fi não conecta."}'
+```
+
+| Método e rota | Uso |
+|---|---|
+| GET /api/chamados | Lista os chamados visíveis para o perfil. Aceita `?status=Resolvido` para consultar o histórico de resolvidos. |
+| GET /api/chamados/{id} | Mostra os detalhes e a linha do tempo. |
+| POST /api/chamados | Abre um chamado como funcionário. |
+| POST /api/chamados/{id}/assumir | Atribui o chamado ao técnico. |
+| POST /api/chamados/{id}/atualizacoes | Registra uma atualização do técnico responsável. Recebe `{"texto":"..."}`. |
+| POST /api/chamados/{id}/resolver | Resolve o chamado. Recebe `{"texto":"..."}` com a solução. |
+
 ## Próximas entregas
 
 1. Ligar a API ao SQL Server e implementar autenticação e permissões por perfil.
