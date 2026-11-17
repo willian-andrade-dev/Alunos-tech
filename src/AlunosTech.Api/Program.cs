@@ -58,6 +58,24 @@ app.UseExceptionHandler(handler => handler.Run(async http =>
         "Não foi possível concluir a operação. Confira a conexão e as tabelas do PostgreSQL." });
 }));
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        OnPrepareResponse = context =>
+        {
+            context.Context.Response.Headers.CacheControl = "no-store";
+            context.Context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Context.Response.Headers["Referrer-Policy"] = "same-origin";
+            context.Context.Response.Headers["Content-Security-Policy"] =
+                "default-src 'self'; script-src 'self'; style-src 'self'; " +
+                "img-src 'self'; connect-src 'self'; object-src 'none'; " +
+                "base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
+        }
+    });
+}
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();

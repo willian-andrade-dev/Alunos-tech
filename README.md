@@ -86,10 +86,9 @@ O endpoint `POST /api/auth/login` recebe `{"email":"...","senha":"..."}` e respo
 
 ## Próximas entregas
 
-1. Construir as telas de login e integrar as interfaces à autenticação da API.
-2. Construir a área do funcionário no mobile e a área do técnico na web.
-3. Implementar a consulta de histórico no desktop.
-4. Adicionar os demais itens de banco, além de Docker, CI/CD, Kubernetes e monitoramento.
+1. Construir o aplicativo Android do funcionário usando a mesma API.
+2. Implementar a consulta de histórico no desktop.
+3. Adicionar os demais itens de banco, além de Docker, CI/CD, Kubernetes e monitoramento.
 
 ## Banco local no VS Code
 
@@ -130,3 +129,16 @@ A gravação do chamado e do histórico ocorre na mesma transação. Atualizaç�
 - Técnicos consultam a fila e assumem chamados, mas somente o responsável pode atualizar ou resolver.
 - Trocar as senhas pelo comando local ou desativar a conta no banco impede o uso de tokens anteriores.
 - Para expor a API fora do computador, a etapa de publicação precisa configurar HTTPS e a persistência das chaves de proteção de dados.
+
+## Interface web
+
+Com a API iniciada em Development, abra http://127.0.0.1:5080 no navegador.
+
+- Entre com uma conta de funcionário para abrir chamados e consultar os próprios registros.
+- Entre com uma conta de técnico para consultar a fila, assumir o atendimento, registrar atualizações e resolver chamados.
+- Use a busca, o filtro de status e o histórico para encontrar os registros.
+- O botão Atualizar recarrega a lista. Os dados vêm do PostgreSQL pela API.
+- O botão Sair encerra a sessão no navegador. O token é mantido somente na memória da página, então atualizar ou fechar a página exige novo login.
+- A interface adapta o layout a telas menores. O aplicativo Android é uma entrega separada.
+
+Os arquivos HTML, CSS e JavaScript ficam em src/AlunosTech.Api/wwwroot e são servidos pela aplicação C#/.NET, na mesma origem da API.

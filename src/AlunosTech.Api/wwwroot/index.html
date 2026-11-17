@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#123d35" />
+    <title>Alunos Tech · Central de suporte</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <section id="login-screen" class="login-layout">
+      <div class="login-intro">
+        <a class="brand" href="/"
+          ><span class="brand-mark">AT</span
+          ><span>Alunos<span class="brand-light">Tech</span></span></a
+        >
+        <div class="intro-copy">
+          <span class="eyebrow">CENTRAL DE SUPORTE</span>
+          <h1>Um lugar para<br />resolver e seguir.</h1>
+          <p>
+            Abra um chamado, acompanhe o atendimento e consulte as soluções da
+            equipe de TI.
+          </p>
+          <div class="intro-flow" aria-label="Etapas do atendimento">
+            <span>01 <b>Abertura</b></span
+            ><span>02 <b>Atendimento</b></span
+            ><span>03 <b>Solução</b></span>
+          </div>
+        </div>
+        <span class="intro-footer">Alunos Tech · Suporte interno de TI</span>
+      </div>
+      <div class="login-panel">
+        <form id="login-form" class="login-form">
+          <span class="eyebrow">BEM-VINDO DE VOLTA</span>
+          <h2>Acesse sua conta</h2>
+          <p class="muted">Entre com seu e-mail e senha para continuar.</p>
+          <label for="email">E-mail</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            maxlength="254"
+            placeholder="seu.email@empresa.com"
+            required
+          />
+          <label for="password">Senha</label>
+          <div class="password-field">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              maxlength="128"
+              required
+            />
+            <button
+              id="toggle-password"
+              class="text-button"
+              type="button"
+              aria-controls="password"
+              aria-pressed="false"
+            >
+              Mostrar
+            </button>
+          </div>
+          <p id="login-error" class="error" role="alert" hidden></p>
+          <button class="button primary full" type="submit">
+            Entrar na central <span aria-hidden="true">→</span>
+          </button>
+          <p class="login-help">
+            Use a conta fornecida pela equipe responsável pelo sistema.
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <div id="workspace" class="workspace" hidden>
+      <aside class="sidebar">
+        <a class="brand" href="/"
+          ><span class="brand-mark">AT</span
+          ><span>Alunos<span class="brand-light">Tech</span></span></a
+        >
+        <p class="sidebar-label">ATENDIMENTO</p>
+        <nav aria-label="Navegação principal">
+          <button id="nav-active" class="nav-button active" type="button">
+            <span aria-hidden="true">▤</span
+            ><span id="nav-active-label">Meus chamados</span>
+          </button>
+          <button id="nav-history" class="nav-button" type="button">
+            <span aria-hidden="true">◷</span>Histórico de resolvidos
+          </button>
+        </nav>
+        <div class="sidebar-bottom">
+          <span class="connection-dot" aria-hidden="true"></span> Central de
+          suporte interno
+        </div>
+      </aside>
+      <div class="main-area">
+        <header class="topbar">
+          <span
+            >Central de suporte <span class="breadcrumb">/ Chamados</span></span
+          >
+          <div class="account">
+            <span id="avatar" class="avatar" aria-hidden="true"></span>
+            <div>
+              <strong id="account-name"></strong
+              ><small id="account-role"></small>
+            </div>
+            <button id="logout" class="text-button" type="button">Sair</button>
+          </div>
+        </header>
+        <main>
+          <div class="page-heading">
+            <div>
+              <span class="eyebrow">ALUNOS TECH / TI</span>
+              <h1 id="page-title">Meus chamados</h1>
+              <p id="page-description" class="muted"></p>
+            </div>
+            <button id="new-ticket" class="button primary" type="button">
+              <span aria-hidden="true">＋</span> Novo chamado
+            </button>
+          </div>
+          <p id="message" class="notice" role="status" hidden></p>
+          <div class="stats" aria-label="Resumo dos chamados">
+            <div class="stat">
+              <span>Abertos</span><strong id="count-open">0</strong
+              ><small>Aguardando atendimento</small>
+            </div>
+            <div class="stat">
+              <span>Em atendimento</span><strong id="count-progress">0</strong
+              ><small>Com um técnico responsável</small>
+            </div>
+            <div class="stat">
+              <span>Resolvidos</span><strong id="count-resolved">0</strong
+              ><small>Soluções registradas</small>
+            </div>
+          </div>
+          <div id="content-grid" class="content-grid">
+            <section class="ticket-panel" aria-label="Lista de chamados">
+              <div class="panel-heading">
+                <h2 id="list-title">Acompanhe seus chamados</h2>
+                <button
+                  id="refresh"
+                  class="button secondary small"
+                  type="button"
+                >
+                  Atualizar
+                </button>
+              </div>
+              <div class="filters">
+                <div class="search-field">
+                  <label class="sr-only" for="search"
+                    >Buscar por título, categoria ou código</label
+                  ><input
+                    id="search"
+                    type="search"
+                    placeholder="Buscar por título, categoria ou código"
+                  />
+                </div>
+                <label class="sr-only" for="status-filter"
+                  >Filtrar por status</label
+                >
+                <select id="status-filter">
+                  <option value="">Todos os status</option>
+                  <option value="Aberto">Aberto</option>
+                  <option value="EmAtendimento">Em atendimento</option>
+                  <option value="Resolvido">Resolvido</option>
+                </select>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Chamado</th>
+                      <th>Categoria</th>
+                      <th>Status</th>
+                      <th><span class="sr-only">Ações</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="ticket-rows"></tbody>
+                </table>
+              </div>
+              <div id="empty-state" class="empty-state" hidden>
+                <span aria-hidden="true">▤</span>
+                <h3 id="empty-title">Nenhum chamado por aqui</h3>
+                <p id="empty-description"></p>
+              </div>
+              <p id="list-count" class="list-count" aria-live="polite"></p>
+            </section>
+            <section
+              id="detail-panel"
+              class="detail-panel"
+              aria-label="Detalhes do chamado"
+              hidden
+            >
+              <div class="panel-heading">
+                <h2 id="detail-code" tabindex="-1">Detalhes</h2>
+                <button
+                  id="close-detail"
+                  class="text-button"
+                  type="button"
+                  aria-label="Fechar detalhes"
+                >
+                  Fechar
+                </button>
+              </div>
+              <div class="detail-body">
+                <span id="detail-status" class="badge"></span>
+                <h3 id="detail-title"></h3>
+                <dl class="detail-meta">
+                  <div>
+                    <dt>Categoria</dt>
+                    <dd id="detail-category"></dd>
+                  </div>
+                  <div>
+                    <dt>Responsável</dt>
+                    <dd id="detail-owner"></dd>
+                  </div>
+                </dl>
+                <h4>Descrição</h4>
+                <p id="detail-description" class="preserve-lines"></p>
+                <button
+                  id="assume-ticket"
+                  class="button primary full"
+                  type="button"
+                  hidden
+                >
+                  Assumir atendimento
+                </button>
+                <p id="assignment-note" class="muted" hidden></p>
+                <form id="attendance-form" hidden>
+                  <label for="attendance-text">Atualização ou solução</label>
+                  <textarea
+                    id="attendance-text"
+                    rows="4"
+                    maxlength="2000"
+                    required
+                    placeholder="Descreva o que foi feito no atendimento."
+                  ></textarea>
+                  <div class="attendance-actions">
+                    <button class="button secondary" type="submit">
+                      Registrar atualização</button
+                    ><button
+                      id="resolve-ticket"
+                      class="button primary"
+                      type="button"
+                    >
+                      Resolver chamado
+                    </button>
+                  </div>
+                </form>
+                <h4 class="timeline-title">Histórico do atendimento</h4>
+                <ol id="timeline" class="timeline"></ol>
+              </div>
+            </section>
+          </div>
+        </main>
+        <footer>
+          Alunos Tech
+          <span>Organização e acompanhamento do suporte de TI.</span>
+        </footer>
+      </div>
+    </div>
+
+    <dialog id="new-dialog" aria-labelledby="new-title">
+      <div class="panel-heading">
+        <h2 id="new-title">Abrir um chamado</h2>
+        <button id="cancel-new-top" class="text-button" type="button">
+          Fechar
+        </button>
+      </div>
+      <form id="new-form" class="new-form">
+        <p class="muted">
+          Conte o que aconteceu para a equipe conseguir ajudar.
+        </p>
+        <label for="ticket-title">Título</label
+        ><input
+          id="ticket-title"
+          name="titulo"
+          maxlength="120"
+          required
+          placeholder="Ex. Não consigo acessar a rede"
+        />
+        <label for="ticket-category">Categoria</label
+        ><select id="ticket-category" name="categoria" required>
+          <option value="">Selecione uma categoria</option>
+          <option>Rede</option>
+          <option>Hardware</option>
+          <option>Software</option>
+          <option>Acessos</option>
+          <option>Outros</option>
+        </select>
+        <label for="ticket-description">Descrição do problema</label
+        ><textarea
+          id="ticket-description"
+          name="descricao"
+          rows="5"
+          maxlength="2000"
+          required
+          placeholder="Informe o problema e o que você estava tentando fazer."
+        ></textarea>
+        <p id="new-error" class="error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button id="cancel-new" class="button secondary" type="button">
+            Cancelar</button
+          ><button class="button primary" type="submit">Enviar chamado</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
