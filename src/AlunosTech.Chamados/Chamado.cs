@@ -30,6 +30,29 @@ public sealed class Chamado
         _historico.Add(new(TipoEvento.Abertura, solicitanteId, agora, null));
     }
 
+    // Recupera o estado persistido sem gerar uma nova abertura no histórico.
+    public static Chamado Restaurar(Guid id, Guid solicitanteId, Guid? tecnicoId,
+        string titulo, string categoria, string descricao, StatusChamado status,
+        IEnumerable<EventoChamado> historico)
+    {
+        return new Chamado(id, solicitanteId, tecnicoId, titulo, categoria,
+            descricao, status, historico);
+    }
+
+    private Chamado(Guid id, Guid solicitanteId, Guid? tecnicoId, string titulo,
+        string categoria, string descricao, StatusChamado status,
+        IEnumerable<EventoChamado> historico)
+    {
+        Id = id;
+        SolicitanteId = solicitanteId;
+        TecnicoId = tecnicoId;
+        Titulo = titulo;
+        Categoria = categoria;
+        Descricao = descricao;
+        Status = status;
+        _historico.AddRange(historico);
+    }
+
     public void Assumir(Guid tecnicoId, DateTimeOffset agora)
     {
         ArgumentOutOfRangeException.ThrowIfEqual(tecnicoId, Guid.Empty);

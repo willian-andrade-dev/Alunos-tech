@@ -18,9 +18,25 @@ O histórico de cada chamado registra a abertura, o início do atendimento, as a
 dotnet run --project checks/Chamados.Checks.csproj
 ```
 
-## API local para testar o fluxo
+## API local com PostgreSQL
 
-A API de demonstração usa armazenamento em memória e perfis de teste. As rotas de chamados só funcionam no ambiente Development e aceitam chamadas locais. Reiniciar a API limpa os dados.
+A API salva os chamados e os eventos no PostgreSQL. As rotas só funcionam no ambiente Development e aceitam chamadas locais com perfis fictícios. O login será implementado em uma próxima etapa.
+
+Antes de iniciar, execute `database/001_chamados.sql` em um banco vazio e, depois, `database/002_usuarios_teste.sql`. Se as tabelas já foram criadas, execute somente o segundo script.
+
+Na pasta do repositório, configure a conexão com o recurso user-secrets do .NET. No PowerShell:
+
+```powershell
+$senha = Read-Host "Senha do PostgreSQL" -AsSecureString
+$senhaTexto = [System.Net.NetworkCredential]::new("", $senha).Password
+$conexao = 'Host=localhost;Port=5432;Database=alunos_tech;Username=postgres;Password="' + $senhaTexto.Replace('"', '""') + '"'
+dotnet user-secrets set "ConnectionStrings:Chamados" "$conexao" --project src/AlunosTech.Api
+Remove-Variable senha, senhaTexto, conexao
+```
+
+O user-secrets salva a configuração fora da pasta do projeto, no perfil local do usuário. Ele serve para desenvolvimento e guarda os valores sem criptografia.
+
+Inicie a API:
 
 ```sh
 dotnet run --project src/AlunosTech.Api --no-launch-profile -- --environment Development --urls http://127.0.0.1:5080
@@ -45,7 +61,7 @@ curl http://127.0.0.1:5080/api/chamados -H 'X-Usuario-Teste: funcionario' \
 
 ## Próximas entregas
 
-1. Ligar a API ao PostgreSQL e implementar autenticação e permissões por perfil.
+1. Implementar login e autenticação com permissões por perfil.
 2. Construir a área do funcionário no mobile e a área do técnico na web.
 3. Implementar a consulta de histórico no desktop.
 4. Adicionar os demais itens de banco, além de Docker, CI/CD, Kubernetes e monitoramento.
@@ -65,7 +81,7 @@ Exemplo de parâmetros locais para a conexão da extensão:
 - Usuário definido na instalação do PostgreSQL
 - Senha definida na instalação, mantida no computador
 
-A API ainda usa dados em memória. A conexão persistente com PostgreSQL será implementada na próxima etapa.
+A API usa essas tabelas para persistência. Para testar localmente, execute também o script de usuários fictícios indicado acima.
 
 ## Escopo da entrega
 
@@ -74,3 +90,26 @@ A API ainda usa dados em memória. A conexão persistente com PostgreSQL será i
 - Interface web para o técnico e módulo desktop de consulta.
 - Orçamento de hospedagem de R$ 0.
 - Prazo informado de 20/11/2026.
+
+## Teste manual de persistência no PowerShell
+
+Com a API em execução, abra outro terminal na pasta do projeto:
+
+```powershell
+$entrada = @{
+    titulo = "Sem acesso à rede"
+    categoria = "Rede"
+    descricao = "O computador não conecta ao Wi-Fi."
+} | ConvertTo-Json
+$chamado = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/chamados" -Method Post -ContentType "application/json; charset=utf-8" -Headers @{"X-Usuario-Teste" = "funcionario"} -Body ([System.Text.Encoding]::UTF8.GetBytes($entrada))
+$chamado
+```
+
+Pare a API com Ctrl+C no primeiro terminal e inicie novamente com o mesmo comando.
+No segundo terminal, mantendo a variável `$chamado`, consulte:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/chamados/$($chamado.id)" -Headers @{"X-Usuario-Teste" = "funcionario"}
+```
+
+O resultado deve manter o mesmo ID e o evento de abertura. A gravação do chamado e do histórico ocorre na mesma transação. Atualizações bloqueiam a linha do chamado até a confirmação, inclusive quando duas instâncias da API atendem pedidos ao mesmo tempo.
