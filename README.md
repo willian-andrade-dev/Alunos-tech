@@ -20,9 +20,11 @@ dotnet run --project checks/Chamados.Checks.csproj
 
 ## API local com PostgreSQL
 
-A API salva os chamados e os eventos no PostgreSQL. As rotas só funcionam no ambiente Development e aceitam chamadas locais com perfis fictícios. O login será implementado em uma próxima etapa.
+A API salva os chamados e os eventos no PostgreSQL. As rotas funcionam no ambiente Development e aceitam chamadas locais. O acesso exige e-mail e senha. O login fornece um token Bearer com duração de uma hora. Ao expirar, faça login novamente. Cada requisição confere se a conta continua ativa e se suas credenciais continuam válidas.
 
-Antes de iniciar, execute `database/001_chamados.sql` em um banco vazio e, depois, `database/002_usuarios_teste.sql`. Se as tabelas já foram criadas, execute somente o segundo script.
+As senhas são armazenadas com o PasswordHasher do ASP.NET Core, usando PBKDF2 com salt individual e 210.000 iterações. Os tokens usam a proteção de dados do ASP.NET Core. As chaves ficam no perfil local do usuário e precisam ser preservadas quando o sistema for colocado em contêineres. O login aceita até dez tentativas por minuto por IP em cada instância da API.
+
+Antes de iniciar, execute `database/001_chamados.sql` em um banco vazio e, depois, `database/002_usuarios_teste.sql`. Se as tabelas já foram criadas, execute somente o segundo script. Em seguida, execute `database/003_autenticacao.sql`. O script 003 adiciona os campos de autenticação sem apagar usuários ou chamados. Usuários existentes precisam receber uma senha antes do primeiro login.
 
 Na pasta do repositório, configure a conexão com o recurso user-secrets do .NET. No PowerShell:
 
@@ -36,19 +38,42 @@ Remove-Variable senha, senhaTexto, conexao
 
 O user-secrets salva a configuração fora da pasta do projeto, no perfil local do usuário. Ele serve para desenvolvimento e guarda os valores sem criptografia.
 
+Com a API parada, defina duas senhas de teste, cada uma com 12 a 128 caracteres. O comando pede a senha no terminal e usa uma para os dois funcionários e outra para os dois técnicos:
+
+```powershell
+dotnet run --project src/AlunosTech.Api --no-launch-profile -- --environment Development --criar-usuarios-teste true
+```
+
+| Conta | Perfil |
+|---|---|
+| funcionario@example.invalid | Funcionário |
+| outro.funcionario@example.invalid | Funcionário |
+| tecnico@example.invalid | Técnico |
+| outro.tecnico@example.invalid | Técnico |
+
+Executar esse comando novamente troca as senhas de todas as quatro contas e invalida seus tokens anteriores.
+
 Inicie a API:
 
 ```sh
 dotnet run --project src/AlunosTech.Api --no-launch-profile -- --environment Development --urls http://127.0.0.1:5080
 ```
 
-Envie o cabeçalho `X-Usuario-Teste` com `funcionario`, `outro-funcionario`, `tecnico` ou `outro-tecnico`. Por exemplo:
+Em outro terminal PowerShell, na pasta do repositório, teste o login:
 
-```sh
-curl http://127.0.0.1:5080/api/chamados -H 'X-Usuario-Teste: funcionario' \
-  -H 'Content-Type: application/json' \
-  -d '{"titulo":"Sem acesso","categoria":"Rede","descricao":"O Wi-Fi não conecta."}'
+```powershell
+& ./scripts/Testar-Login.ps1
 ```
+
+Para testar o técnico:
+
+```powershell
+& ./scripts/Testar-Login.ps1 -Email "tecnico@example.invalid"
+```
+
+O script solicita a senha e mostra os dados da conta e os chamados acessíveis.
+
+O endpoint `POST /api/auth/login` recebe `{"email":"...","senha":"..."}` e responde com `accessToken`, `tokenType`, `expiresIn` e `refreshToken`. Use o accessToken no cabeçalho `Authorization: Bearer <token>`. A renovação nesta versão ocorre por novo login. O endpoint `GET /api/auth/me` retorna o nome, e-mail e perfil. As rotas de chamados exigem esse mesmo cabeçalho.
 
 | Método e rota | Uso |
 |---|---|
@@ -61,7 +86,7 @@ curl http://127.0.0.1:5080/api/chamados -H 'X-Usuario-Teste: funcionario' \
 
 ## Próximas entregas
 
-1. Implementar login e autenticação com permissões por perfil.
+1. Construir as telas de login e integrar as interfaces à autenticação da API.
 2. Construir a área do funcionário no mobile e a área do técnico na web.
 3. Implementar a consulta de histórico no desktop.
 4. Adicionar os demais itens de banco, além de Docker, CI/CD, Kubernetes e monitoramento.
@@ -91,25 +116,17 @@ A API usa essas tabelas para persistência. Para testar localmente, execute tamb
 - Orçamento de hospedagem de R$ 0.
 - Prazo informado de 20/11/2026.
 
-## Teste manual de persistência no PowerShell
+## Verificação de persistência
 
-Com a API em execução, abra outro terminal na pasta do projeto:
+Abra um chamado com uma conta de funcionário. Pare a API com Ctrl+C e inicie novamente usando a mesma conexão. Entre com a mesma conta e consulte o chamado pelo ID. O chamado e o histórico devem continuar disponíveis.
 
-```powershell
-$entrada = @{
-    titulo = "Sem acesso à rede"
-    categoria = "Rede"
-    descricao = "O computador não conecta ao Wi-Fi."
-} | ConvertTo-Json
-$chamado = Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/chamados" -Method Post -ContentType "application/json; charset=utf-8" -Headers @{"X-Usuario-Teste" = "funcionario"} -Body ([System.Text.Encoding]::UTF8.GetBytes($entrada))
-$chamado
-```
+A gravação do chamado e do histórico ocorre na mesma transação. Atualizações bloqueiam a linha do chamado até a confirmação, inclusive quando duas instâncias da API atendem pedidos ao mesmo tempo.
 
-Pare a API com Ctrl+C no primeiro terminal e inicie novamente com o mesmo comando.
-No segundo terminal, mantendo a variável `$chamado`, consulte:
+## Validação do login
 
-```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:5080/api/chamados/$($chamado.id)" -Headers @{"X-Usuario-Teste" = "funcionario"}
-```
-
-O resultado deve manter o mesmo ID e o evento de abertura. A gravação do chamado e do histórico ocorre na mesma transação. Atualizações bloqueiam a linha do chamado até a confirmação, inclusive quando duas instâncias da API atendem pedidos ao mesmo tempo.
+- Uma senha incorreta ou uma conta sem senha retorna 401.
+- Uma requisição sem token, com token adulterado ou expirado retorna 401.
+- Funcionários consultam somente os próprios chamados. A tentativa de assumir um chamado retorna 403.
+- Técnicos consultam a fila e assumem chamados, mas somente o responsável pode atualizar ou resolver.
+- Trocar as senhas pelo comando local ou desativar a conta no banco impede o uso de tokens anteriores.
+- Para expor a API fora do computador, a etapa de publicação precisa configurar HTTPS e a persistência das chaves de proteção de dados.
